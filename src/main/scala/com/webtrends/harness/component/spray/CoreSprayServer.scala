@@ -34,7 +34,7 @@ import scala.concurrent.{Await, Promise, Future}
 import scala.util._
 
 object CoreSprayServer {
-  def props(port:Int, settings:Option[ServerSettings]=None): Props = Props(classOf[CoreSprayServer], port, settings)
+  def props(port:Int, routeFilter: (String) => Boolean, settings:Option[ServerSettings]=None): Props = Props(classOf[CoreSprayServer], port, routeFilter, settings)
 
   val ParamChildWorker = "spray-base"
 }
@@ -43,7 +43,7 @@ object CoreSprayServer {
 @SerialVersionUID(1L) case class ShutdownServer()
 @SerialVersionUID(1L) case class GetMetrics()
 
-class CoreSprayServer(port:Int, settings:Option[ServerSettings]=None) extends HActor {
+class CoreSprayServer(port:Int, routeFilter: (String) => Boolean, settings:Option[ServerSettings]=None) extends HActor {
   import context.system
   import context.dispatcher
 
@@ -80,7 +80,8 @@ class CoreSprayServer(port:Int, settings:Option[ServerSettings]=None) extends HA
     // Create and start the spray-can HttpServer, telling it that we want
     // requests to be handled by the root service actor
     if (context.child(CoreSprayServer.ParamChildWorker).isEmpty) {
-      (httpServer ? Http.Bind(listener = AkkaUtil.initActorFromConfig(Props[CoreSprayWorker], CoreSprayServer.ParamChildWorker),
+      val p = Props(classOf[CoreSprayWorker], routeFilter)
+      (httpServer ? Http.Bind(listener = AkkaUtil.initActorFromConfig(p, CoreSprayServer.ParamChildWorker),
         interface = "0.0.0.0", port = port, settings = settings))
         .onComplete {
           case Failure(e) =>

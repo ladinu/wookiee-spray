@@ -237,6 +237,11 @@ trait SprayGet extends SprayRoutes {
   addRoute(commandName + "_get", buildRoute(MethodDirectives.get))
 }
 
+trait SprayGetExternal extends SprayRoutes {
+  this : Command =>
+  addRoute(commandName + "_get_external", buildRoute(MethodDirectives.get))
+}
+
 /**
  * Based trait for any routes that grab the entity from the body of the request.
  * Currently Put and Post, due to the implicit manifest that is required for marshalling

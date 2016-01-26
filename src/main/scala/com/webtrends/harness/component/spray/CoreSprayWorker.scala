@@ -52,7 +52,7 @@ import scala.util.{Success, Failure}
 @SerialVersionUID(1L) case class HttpStartProcessing()
 @SerialVersionUID(1L) case class HttpReloadRoutes()
 
-class CoreSprayWorker extends HttpServiceActor
+class CoreSprayWorker(routeFilter: (String) => Boolean) extends HttpServiceActor
     with ActorHealth
     with ActorLoggingAdapter
     with CIDRDirectives
@@ -76,7 +76,8 @@ class CoreSprayWorker extends HttpServiceActor
    * Establish our routes and other receive handlers
    */
   def initializing: Receive = health orElse runRoute(baseRoutes) orElse {
-    case HttpStartProcessing => context.become(running)
+    case HttpStartProcessing =>
+      context.become(running)
     case HttpReloadRoutes => // Do nothing
   }
 
@@ -91,7 +92,7 @@ class CoreSprayWorker extends HttpServiceActor
    * are defined below.
    */
   def getRoutes: Route = {
-    val serviceRoutes = RouteManager.getRoutes.filter(r => !r.equals(Map.empty))
+    val serviceRoutes = RouteManager.getRoutes(routeFilter).filter(r => !r.equals(Map.empty))
     (serviceRoutes ++ List(this.baseRoutes, this.staticRoutes)).reduceLeft(_ ~ _)
   }
 

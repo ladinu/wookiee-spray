@@ -24,6 +24,7 @@ import com.webtrends.harness.authentication.CIDRRules
 import com.webtrends.harness.component.spray.directive.CIDRDirectives
 import spray.routing._
 
+import scala.collection.mutable
 import scala.collection.mutable.{HashMap, SynchronizedMap}
 
 /**
@@ -47,5 +48,5 @@ object RouteManager extends CIDRDirectives {
 
   def getRoute(service: String): Option[Route] = routes.get(service)
 
-  def getRoutes: Iterable[Route] = routes.values
+  def getRoutes(routeFilter: (String) => Boolean): Iterable[Route] = routes.filterKeys(routeFilter).values
 }

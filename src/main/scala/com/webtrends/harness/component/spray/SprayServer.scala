@@ -29,7 +29,7 @@ trait SprayServer { this : Actor =>
   var httpServer:Option[ActorRef] = None
 
   def startSprayServer(port:Int, settings:Option[ServerSettings]=None) : ActorRef = {
-    httpServer = Some(context.actorOf(CoreSprayServer.props(port, settings), SprayServer.SprayServerName))
+    httpServer = Some(context.actorOf(CoreSprayServer.props(port, {x: String => true}), SprayServer.SprayServerName))
     httpServer.get ! BindServer
     httpServer.get
   }

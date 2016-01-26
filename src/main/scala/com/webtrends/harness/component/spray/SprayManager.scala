@@ -31,11 +31,13 @@ case class WebSocketRunning()
 
 class SprayManager(name:String) extends Component(name)
     with SprayServer
+    with SprayExternalHttpServer
     with SprayClient
     with SprayWebSocketServer {
 
   implicit val spSettings = ServerSettings(config)
   implicit val port = ConfigUtil.getDefaultValue(s"${name}.http-port", config.getInt, 8080)
+  implicit val externalHttpServerPort = ConfigUtil.getDefaultValue(s"${name}.external-http-port", config.getInt, 3000)
   implicit val websocketPort = ConfigUtil.getDefaultValue(s"${name}.websocket-port", config.getInt, 8081)
   var rCount = new AtomicInteger(0)
 
@@ -60,7 +62,7 @@ class SprayManager(name:String) extends Component(name)
 
   private def checkRunning: Unit = {
     rCount.getAndIncrement()
-    if (rCount.get() == 2) {
+    if (rCount.get() == 3) {
       context.parent ! ComponentStarted(self.path.name)
     }
   }
@@ -68,6 +70,7 @@ class SprayManager(name:String) extends Component(name)
   override def start = {
     startSprayServer(port, Some(spSettings))
     startWebSocketServer(websocketPort, Some(spSettings))
+    startExternalHttpServer(externalHttpServerPort, Some(spSettings))
     // start the HttpClient actor
     startSprayClient
   }
@@ -75,6 +78,7 @@ class SprayManager(name:String) extends Component(name)
   override def stop = {
     super.stop
     stopSprayServer
+    stopExternalHttpServer
     stopWebSocketServer
   }
 }
